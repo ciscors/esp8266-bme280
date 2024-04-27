@@ -6,6 +6,22 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <SPI.h>
+
+#include "icons.h"
+
+// ST7789 TFT module connections
+#define TFT_DC    D4    // TFT DC  pin is connected to NodeMCU pin D1 (GPIO5)
+#define TFT_RST   D8     // TFT RST pin is connected to NodeMCU pin D2 (GPIO4)
+#define TFT_CS    -1     // TFT CS  pin is connected to NodeMCU pin D8 (GPIO15)
+// initialize ST7789 TFT library with hardware SPI module
+// SCK (CLK) ---> NodeMCU pin D5 (GPIO14)
+// MOSI(DIN) ---> NodeMCU pin D7 (GPIO13)
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+
+
 /*#include <SPI.h>
 #define BME_SCK 14
 #define BME_MISO 12
@@ -20,7 +36,11 @@ Adafruit_BME280 bme; // I2C
 
 unsigned long delayTime;
 
+String inHum;
+String inTemp;
+
 void printValues();
+void tftPrintTest();
 
 void setup() {
   Serial.begin(115200);
@@ -40,6 +60,18 @@ void setup() {
   delayTime = 1000;
 
   Serial.println();
+
+  tft.init(240, 240, SPI_MODE3);    // Init ST7789 display 240x240 pixel
+
+  // if the screen is flipped, remove this command
+  //ft.setRotation(2);
+
+  Serial.println(F("Initialized"));
+
+  uint16_t time = millis();
+  tft.fillScreen(ST77XX_BLACK);
+  time = millis() - time;
+  tft.drawBitmap(60,60,image_data_Image,60,60,8);
 }
 
 void loop() { 
@@ -70,4 +102,60 @@ void printValues() {
   Serial.println(" %");
 
   Serial.println();
+
+ inHum=  String(bme.readHumidity(),1)+"%";
+  inTemp= String(bme.readTemperature(),1)+"C";
+  tft.setTextWrap(false);
+  //tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 30);
+  tft.setTextColor(ST77XX_RED,0);
+  tft.setTextSize(6);
+  tft.println(inTemp);
+  tft.setTextColor(ST77XX_YELLOW,0);
+  tft.println(inHum);
+ 
+  
+  //tftPrintTest() ;
+  
+
+}
+
+
+void tftPrintTest() {
+  tft.setTextWrap(false);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 30);
+  tft.setTextColor(ST77XX_RED);
+  tft.setTextSize(1);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.setTextSize(2);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(3);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_BLUE);
+  tft.setTextSize(4);
+  tft.print(1234.567);
+  delay(1500);
+  tft.setCursor(0, 0);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(0);
+  tft.println("Hello World!");
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.print(3.12345, 6);
+  tft.println(" Want pi?");
+  tft.println(" ");
+  tft.print(8675309, HEX); // print 8,675,309 out in HEX!
+  tft.println(" Print HEX!");
+  tft.println(" ");
+  tft.setTextColor(ST77XX_WHITE);
+  tft.println("Sketch has been");
+  tft.println("running for: ");
+  tft.setTextColor(ST77XX_MAGENTA);
+  tft.print(millis() / 1000);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.print(" seconds.");
 }
