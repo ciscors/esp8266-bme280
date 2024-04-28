@@ -71,7 +71,7 @@ void setup() {
   uint16_t time = millis();
   tft.fillScreen(ST77XX_BLACK);
   time = millis() - time;
-  tft.drawBitmap(60,60,image_data_Image,60,60,8);
+  tft.drawRGBBitmap(160,160,a02d_64,64,64);
 }
 
 void loop() { 
