@@ -1,6 +1,4 @@
-/*********
-  Complete project details at https://randomnerdtutorials.com  
-*********/
+
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -10,7 +8,14 @@
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
 
+#include <ESP8266WiFi.h>
+#include <NTPClient.h> 
+#include <WiFiUdp.h> 
+#include "OneButton.h"
+
 #include "icons.h"
+#include "Ticker.h"
+
 
 // ST7789 TFT module connections
 #define TFT_DC    D4    // TFT DC  pin is connected to NodeMCU pin D1 (GPIO5)
@@ -39,14 +44,58 @@ unsigned long delayTime;
 String inHum;
 String inTemp;
 
+String SSID = "Acraft";
+String PASS = "12345678";
+
+const long utcOffsetInSeconds = 7200+3600;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+
+int buttonPin = D6;
+int signalPin = D0;
+int signalState = LOW;
+OneButton button(buttonPin, true);
+
+Ticker alarm;
+
+int Sx[60],Mx[60],Hx[30];
+int Sy[60],My[60],Hy[30];
+int center_x=120;
+int center_y=120;
+int seconds_hand_len = 80;
+int minutes_hand_len = 60;
+int hours_hand_len = 40;
+int clock_radius=100;
+int hours_x=0;
+int hours_y=0;
+
+int hours;
+int minutes;
+int seconds;
+
+int prevS;
+int prevM;
+
 void printValues();
-void tftPrintTest();
+void singleClick();
+void changeState();
+
+long int currentMillis = 0;
+long int startMillis = 0;
+
+int period = 1000;
+
+void drawClock();
 
 void setup() {
   Serial.begin(115200);
   Serial.println(F("BME280 test"));
 
   bool status;
+
+  pinMode(buttonPin,INPUT_PULLUP);
+  pinMode(signalPin,OUTPUT);
+  digitalWrite(signalPin,signalState);
 
   // default settings
   // (you can also pass in a Wire library object like &Wire2)
@@ -72,11 +121,77 @@ void setup() {
   tft.fillScreen(ST77XX_BLACK);
   time = millis() - time;
   tft.drawRGBBitmap(160,160,a02d_64,64,64);
+
+  Serial.print("Connecting to WiFi");
+ WiFi.begin(SSID, PASS);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+
+  timeClient.begin();
+ if (timeClient.update()) {
+      Serial.println("Synchronized with NTP.");
+    } else {
+      Serial.println("Error synchronizing with NTP.");
+    }
+  
+
+hours = timeClient.getHours();
+minutes = timeClient.getMinutes();
+seconds = timeClient.getSeconds();
+
+Serial.print(hours);Serial.print(":");
+Serial.print(minutes);Serial.print(":");
+Serial.print(seconds);Serial.println("");
+  pinMode(buttonPin,INPUT_PULLUP);
+  pinMode(signalPin,OUTPUT);
+  digitalWrite(signalPin,signalState);
+  button.attachClick(singleClick); 
+
+  drawClock();
+   prevS=seconds;
+ prevM=minutes;
 }
 
 void loop() { 
-  printValues();
-  delay(delayTime);
+  button.tick();
+  //printValues();
+  //delay(delayTime);
+ // b
+
+ //if ( digitalRead(buttonPin) == LOW) {Serial.println("LOW"); delay(1000);} else {Serial.println("HIGH");delay(1000);}
+
+ currentMillis = millis();
+  
+
+if(currentMillis - startMillis >= period) {
+  tft.drawLine(120,120,Sx[prevS],Sy[prevS],ST77XX_BLACK); 
+  hours = timeClient.getHours();
+  minutes = timeClient.getMinutes();
+  seconds = timeClient.getSeconds();
+  prevS = seconds;
+
+  Serial.print(hours);Serial.print(":");
+  Serial.print(minutes);Serial.print(":");
+  Serial.print(seconds);Serial.println("");
+
+    if(seconds>=59) {seconds=0;prevS=0; minutes++; 
+       if(minutes>=59) minutes=0;
+       tft.drawLine(120,120,Mx[prevM],My[prevM],ST77XX_BLACK);
+       tft.drawLine(120,120,Mx[minutes],My[minutes],ST77XX_YELLOW); 
+       prevM=minutes;
+       hours_x = int(hours_hand_len * sin(radians(hours * 30 + 0.5 * minutes)) + center_x);
+       hours_y = int(-1 * hours_hand_len * cos(radians(hours * 30 + 0.5 * minutes )) + center_y);
+       tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
+      
+      }
+   tft.drawLine(120,120,Sx[seconds],Sy[seconds],ST77XX_GREEN); 
+  if(minutes<=seconds) tft.drawLine(120,120,Mx[minutes],My[minutes],ST77XX_YELLOW); 
+  if(hours<=seconds) tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
+  startMillis=currentMillis; 
+}
+
 }
 
 void printValues() {
@@ -116,46 +231,75 @@ void printValues() {
  
   
   //tftPrintTest() ;
+  //drawClock();
   
 
 }
 
 
-void tftPrintTest() {
-  tft.setTextWrap(false);
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setCursor(0, 30);
-  tft.setTextColor(ST77XX_RED);
-  tft.setTextSize(1);
-  tft.println("Hello World!");
-  tft.setTextColor(ST77XX_YELLOW);
-  tft.setTextSize(2);
-  tft.println("Hello World!");
-  tft.setTextColor(ST77XX_GREEN);
-  tft.setTextSize(3);
-  tft.println("Hello World!");
-  tft.setTextColor(ST77XX_BLUE);
-  tft.setTextSize(4);
-  tft.print(1234.567);
-  delay(1500);
-  tft.setCursor(0, 0);
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.setTextSize(0);
-  tft.println("Hello World!");
-  tft.setTextSize(1);
-  tft.setTextColor(ST77XX_GREEN);
-  tft.print(3.12345, 6);
-  tft.println(" Want pi?");
-  tft.println(" ");
-  tft.print(8675309, HEX); // print 8,675,309 out in HEX!
-  tft.println(" Print HEX!");
-  tft.println(" ");
-  tft.setTextColor(ST77XX_WHITE);
-  tft.println("Sketch has been");
-  tft.println("running for: ");
-  tft.setTextColor(ST77XX_MAGENTA);
-  tft.print(millis() / 1000);
-  tft.setTextColor(ST77XX_WHITE);
-  tft.print(" seconds.");
+
+
+void changeState()
+{
+  digitalWrite(signalPin,!digitalRead(signalPin));
+}
+
+void singleClick()
+{ 
+  Serial.println("SingleClick() detected.");
+  printValues();
+  if(signalState == LOW) {
+    alarm.detach();
+    digitalWrite(signalPin, LOW);}
+  else {
+    alarm.attach(0.5,changeState);}
+
+  signalState = !signalState;
+  
+}
+
+void drawClock() {
+
+for(int secs=0;secs<60;secs++){
+ Sx[secs] = int(seconds_hand_len * sin(radians(secs * 6)) + center_x);
+ Sy[secs] = int(-1 * seconds_hand_len * cos(radians(secs * 6)) + center_y);
+}
+
+for(int mins=0;mins<60;mins++){
+ Mx[mins] = int(minutes_hand_len * sin(radians(mins * 6)) + center_x);
+ My[mins] = int(-1 * minutes_hand_len * cos(radians(mins * 6)) + center_y);
+}
+ // tft.begin();
+
+  tft.drawCircle(center_x,center_y,clock_radius,ST77XX_WHITE);
+  tft.drawCircle(center_x,center_y,clock_radius+1,ST77XX_WHITE);
+ 
+for(int hrs=0;hrs<12;hrs++){
+
+hours_x = int(clock_radius * sin(radians(hrs * 30 )) + center_x);
+hours_y = int(-1 *clock_radius * cos(radians(hrs * 30)) + center_y);
+tft.drawLine(120,120,hours_x,hours_y,ST77XX_WHITE);
+}
+  tft.fillCircle(120,120,clock_radius-10,ST77XX_BLACK);
+
+tft.setTextSize(2);
+
+  tft.setCursor(center_x,center_y-clock_radius+10);
+  tft.print("12");
+  tft.setCursor(center_x,center_y+clock_radius-10);
+  tft.print("6");
+  tft.setCursor(center_x+clock_radius-10,center_y);
+  tft.print("3");
+  tft.setCursor(center_x-clock_radius+10,center_y);
+  tft.print("9");
+ 
+
+hours_x = int(hours_hand_len * sin(radians(hours * 30 + 0.5 * minutes)) + center_x);
+hours_y = int(-1 * hours_hand_len * cos(radians(hours * 30 + 0.5 * minutes )) + center_y);
+       
+
+ tft.drawLine(120,120,Sx[seconds],Sy[seconds],ST77XX_GREEN);
+ tft.drawLine(120,120,Mx[minutes],My[minutes],ST77XX_YELLOW);
+ tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
+
 }
