@@ -65,7 +65,7 @@ int center_y=120;
 int seconds_hand_len = 80;
 int minutes_hand_len = 60;
 int hours_hand_len = 40;
-int clock_radius=100;
+int clock_radius=90;
 int hours_x=0;
 int hours_y=0;
 
@@ -75,6 +75,7 @@ int seconds;
 
 int prevS;
 int prevM;
+int prevH;
 
 void printValues();
 void singleClick();
@@ -152,6 +153,7 @@ Serial.print(seconds);Serial.println("");
   drawClock();
    prevS=seconds;
  prevM=minutes;
+ prevH=hours;
 }
 
 void loop() { 
@@ -166,29 +168,37 @@ void loop() {
   
 
 if(currentMillis - startMillis >= period) {
-  tft.drawLine(120,120,Sx[prevS],Sy[prevS],ST77XX_BLACK); 
+  
   hours = timeClient.getHours();
   minutes = timeClient.getMinutes();
   seconds = timeClient.getSeconds();
-  prevS = seconds;
+  
 
   Serial.print(hours);Serial.print(":");
   Serial.print(minutes);Serial.print(":");
   Serial.print(seconds);Serial.println("");
-
-    if(seconds>=59) {seconds=0;prevS=0; minutes++; 
-       if(minutes>=59) minutes=0;
+       tft.drawLine(120,120,Sx[prevS],Sy[prevS],ST77XX_BLACK); 
+       tft.drawLine(120,120,Sx[seconds],Sy[seconds],ST77XX_GREEN); 
+       prevS=seconds;
+    
        tft.drawLine(120,120,Mx[prevM],My[prevM],ST77XX_BLACK);
        tft.drawLine(120,120,Mx[minutes],My[minutes],ST77XX_YELLOW); 
+
+       hours_x = int(hours_hand_len * sin(radians(prevH * 30 + 0.5 * prevM)) + center_x);
+       hours_y = int(-1 * hours_hand_len * cos(radians(prevH * 30 + 0.5 * prevM )) + center_y);
        prevM=minutes;
+
+       tft.drawLine(120,120,hours_x,hours_y,ST77XX_BLACK);
+
+       
        hours_x = int(hours_hand_len * sin(radians(hours * 30 + 0.5 * minutes)) + center_x);
        hours_y = int(-1 * hours_hand_len * cos(radians(hours * 30 + 0.5 * minutes )) + center_y);
        tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
+       prevH=hours;
       
-      }
-   tft.drawLine(120,120,Sx[seconds],Sy[seconds],ST77XX_GREEN); 
-  if(minutes<=seconds) tft.drawLine(120,120,Mx[minutes],My[minutes],ST77XX_YELLOW); 
-  if(hours<=seconds) tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
+      
+   
+  
   startMillis=currentMillis; 
 }
 
@@ -284,13 +294,13 @@ tft.drawLine(120,120,hours_x,hours_y,ST77XX_WHITE);
 
 tft.setTextSize(2);
 
-  tft.setCursor(center_x,center_y-clock_radius+10);
+  tft.setCursor(center_x-4,center_y-clock_radius-16);
   tft.print("12");
-  tft.setCursor(center_x,center_y+clock_radius-10);
+  tft.setCursor(center_x-4,center_y+clock_radius+10);
   tft.print("6");
-  tft.setCursor(center_x+clock_radius-10,center_y);
+  tft.setCursor(center_x+clock_radius+10,center_y-4);
   tft.print("3");
-  tft.setCursor(center_x-clock_radius+10,center_y);
+  tft.setCursor(center_x-clock_radius-12,center_y-4);
   tft.print("9");
  
 
