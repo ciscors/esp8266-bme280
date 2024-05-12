@@ -81,12 +81,18 @@ void printValues();
 void singleClick();
 void changeState();
 
+void drawClock();
+
+void displayAnalogueClock();
+
 long int currentMillis = 0;
 long int startMillis = 0;
 
 int period = 1000;
 
-void drawClock();
+
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -118,20 +124,20 @@ void setup() {
 
   Serial.println(F("Initialized"));
 
-  uint16_t time = millis();
+  
   tft.fillScreen(ST77XX_BLACK);
-  time = millis() - time;
-  tft.drawRGBBitmap(160,160,a02d_64,64,64);
+  
+  //tft.drawRGBBitmap(160,160,a02d_64,64,64);
 
   Serial.print("Connecting to WiFi");
- WiFi.begin(SSID, PASS);
+  WiFi.begin(SSID, PASS);
   while (WiFi.status() != WL_CONNECTED) {
     delay(100);
     Serial.print(".");
   }
 
   timeClient.begin();
- if (timeClient.update()) {
+  if (timeClient.update()) {
       Serial.println("Synchronized with NTP.");
     } else {
       Serial.println("Error synchronizing with NTP.");
@@ -145,38 +151,44 @@ seconds = timeClient.getSeconds();
 Serial.print(hours);Serial.print(":");
 Serial.print(minutes);Serial.print(":");
 Serial.print(seconds);Serial.println("");
+  
   pinMode(buttonPin,INPUT_PULLUP);
   pinMode(signalPin,OUTPUT);
   digitalWrite(signalPin,signalState);
+
   button.attachClick(singleClick); 
 
-  drawClock();
-   prevS=seconds;
+ drawClock();
+ 
+  prevS=seconds;
  prevM=minutes;
  prevH=hours;
 }
 
 void loop() { 
   button.tick();
-  //printValues();
-  //delay(delayTime);
- // b
-
- //if ( digitalRead(buttonPin) == LOW) {Serial.println("LOW"); delay(1000);} else {Serial.println("HIGH");delay(1000);}
-
+ 
  currentMillis = millis();
   
 
 if(currentMillis - startMillis >= period) {
   
-  hours = timeClient.getHours();
-  minutes = timeClient.getMinutes();
-  seconds = timeClient.getSeconds();
-  
+  displayAnalogueClock();
+  startMillis=currentMillis; 
+}
 
+}
+
+void displayAnalogueClock(){
+   hours = timeClient.getHours();
+   minutes = timeClient.getMinutes();
+   seconds = timeClient.getSeconds();
+  
+  /*
   Serial.print(hours);Serial.print(":");
   Serial.print(minutes);Serial.print(":");
   Serial.print(seconds);Serial.println("");
+  */  
        tft.drawLine(120,120,Sx[prevS],Sy[prevS],ST77XX_BLACK); 
        tft.drawLine(120,120,Sx[seconds],Sy[seconds],ST77XX_GREEN); 
        prevS=seconds;
@@ -196,11 +208,6 @@ if(currentMillis - startMillis >= period) {
        tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
        prevH=hours;
       
-      
-   
-  
-  startMillis=currentMillis; 
-}
 
 }
 
@@ -313,3 +320,5 @@ hours_y = int(-1 * hours_hand_len * cos(radians(hours * 30 + 0.5 * minutes )) + 
  tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
 
 }
+
+
