@@ -15,6 +15,8 @@
 
 #include "icons.h"
 #include "Ticker.h"
+#include  "WeatherIcons.h"
+
 
 
 // ST7789 TFT module connections
@@ -84,6 +86,7 @@ void changeState();
 void drawClock();
 
 void displayAnalogueClock();
+void displayDigitalClock();
 
 long int currentMillis = 0;
 long int startMillis = 0;
@@ -127,7 +130,51 @@ void setup() {
   
   tft.fillScreen(ST77XX_BLACK);
   
-  //tft.drawRGBBitmap(160,160,a02d_64,64,64);
+  tft.drawRGBBitmap(160,160,a01d,64,64);
+  tft.drawRGBBitmap(140,10,a02n,64,64);
+   tft.drawRGBBitmap(74,10,a01n,64,64);
+   tft.drawRGBBitmap(10,10,a02d,64,64);
+tft.drawRGBBitmap(100,100,i01d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i01n,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i02d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i02n,96,96);
+delay(1000);
+
+tft.drawRGBBitmap(100,100,i03d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i03n,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i04d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i04n,96,96);
+delay(1000);
+
+tft.drawRGBBitmap(100,100,i09d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i09n,96,96);
+delay(1000);
+
+tft.drawRGBBitmap(100,100,i10d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i10n,96,96);
+delay(1000);
+
+tft.drawRGBBitmap(100,100,i11d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i11n,96,96);
+delay(1000);
+
+tft.drawRGBBitmap(100,100,i13d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i13n,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i50d,96,96);
+delay(1000);
+tft.drawRGBBitmap(100,100,i50n,96,96);
+delay(1000);
 
   Serial.print("Connecting to WiFi");
   WiFi.begin(SSID, PASS);
@@ -173,7 +220,8 @@ void loop() {
 
 if(currentMillis - startMillis >= period) {
   
-  displayAnalogueClock();
+  //displayAnalogueClock();
+  displayDigitalClock();
   startMillis=currentMillis; 
 }
 
@@ -208,6 +256,29 @@ void displayAnalogueClock(){
        tft.drawLine(120,120,hours_x,hours_y,ST77XX_RED);
        prevH=hours;
       
+
+}
+
+void displayDigitalClock(){
+   hours = timeClient.getHours();
+   minutes = timeClient.getMinutes();
+   seconds = timeClient.getSeconds();
+   String Time="";
+
+   if (hours<10) Time ="0"+String(hours) + ":"; else Time =String(hours) + ":";
+   if (minutes<10) Time = Time+"0"+String(minutes)+":"; else Time = Time+String(minutes)+":";
+   if (seconds<10) Time = Time+"0"+String(seconds); else Time =Time+ String(seconds);
+
+   
+
+
+  tft.setTextWrap(false);
+  
+  tft.setCursor(0, 50);
+  tft.setTextColor(ST77XX_RED,0);
+  tft.setTextSize(5);
+  tft.println(Time);
+  
 
 }
 
